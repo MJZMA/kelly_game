@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Kelly tests</title>
+<style>
+  body { font-family: ui-monospace, Menlo, monospace; padding: 1.5rem; background: #111; color: #eee; }
+  .pass { color: #6f6; } .fail { color: #f66; font-weight: bold; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Kelly tests</h1>
+<pre id="out"></pre>
+<script type="module">
+import {
+  gamblingKelly, investmentKelly,
+  genGamblingEasy, genInvestmentEasy,
+  genGamblingHard, genInvestmentHard,
+  genProblem, describe, _internal,
+} from './kelly.js';
+
+const out = document.getElementById('out');
+let passed = 0, failed = 0;
+
+function ok(label, cond, detail = '') {
+  const line = document.createElement('div');
+  line.className = cond ? 'pass' : 'fail';
+  line.textContent = (cond ? '✓ ' : '✗ ') + label + (detail ? ' — ' + detail : '');
+  out.appendChild(line);
+  cond ? passed++ : failed++;
+}
+
+const approx = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
+
+// Formula sanity
+ok('gamblingKelly(0.6, 2) = 0.4', approx(gamblingKelly(0.6, 2), 0.4));
+ok('gamblingKelly(0.55, 1) = 0.10', approx(gamblingKelly(0.55, 1), 0.10));
+ok('gamblingKelly(0.50, 1) = 0', approx(gamblingKelly(0.5, 1), 0));
+ok('investmentKelly(0.6, 0.5, 0.5) = 0.4', approx(investmentKelly(0.6, 0.5, 0.5), 0.4));
+ok('investmentKelly(0.5, 1.0, 0.5) = 0.5', approx(investmentKelly(0.5, 1.0, 0.5), 0.5));
+
+// Easy generator: every problem must produce a whole-percent answer
+const easyG = _internal.EASY_GAMBLING_PROBLEMS;
+const easyI = _internal.EASY_INVESTMENT_PROBLEMS;
+ok('Easy gambling pool non-empty', easyG.length > 0, `${easyG.length} problems`);
+ok('Easy investment pool non-empty', easyI.length > 0, `${easyI.length} problems`);
+
+const allEasyClean = [...easyG, ...easyI].every(p => Number.isInteger(p.answer) && p.answer > 0 && p.answer <= 250);
+ok('All Easy problems have whole-percent answer in (0, 250%]', allEasyClean);
+
+// Spot-check: re-derive answer from params to make sure stored answer matches formula
+const verifyEasy = [...easyG, ...easyI].every(p => {
+  const f = p.mode === 'gambling'
+    ? gamblingKelly(p.params.p, p.params.b)
+    : investmentKelly(p.params.p, p.params.g, p.params.l);
+  return Math.abs(Math.round(f * 100) - p.answer) < 1e-6;
+});
+ok('Easy stored answer matches formula', verifyEasy);
+
+// Generators return shape
+for (let i = 0; i < 50; i++) {
+  const g = genGamblingEasy();
+  if (!(g.mode === 'gambling' && Number.isInteger(g.answer) && g.tolerance === 0)) {
+    ok('genGamblingEasy shape', false, JSON.stringify(g)); break;
+  }
+  if (i === 49) ok('genGamblingEasy shape (50 samples)', true);
+}
+for (let i = 0; i < 50; i++) {
+  const g = genInvestmentEasy();
+  if (!(g.mode === 'investment' && Number.isInteger(g.answer) && g.tolerance === 0)) {
+    ok('genInvestmentEasy shape', false, JSON.stringify(g)); break;
+  }
+  if (i === 49) ok('genInvestmentEasy shape (50 samples)', true);
+}
+
+// Hard generators: should always return a problem with tolerance 1
+let hardOK = true;
+for (let i = 0; i < 50; i++) {
+  const h = genGamblingHard();
+  if (h.tolerance !== 1 || !Number.isInteger(h.answer) || h.answer <= 0) { hardOK = false; break; }
+}
+ok('genGamblingHard always valid (50 samples)', hardOK);
+
+hardOK = true;
+for (let i = 0; i < 50; i++) {
+  const h = genInvestmentHard();
+  if (h.tolerance !== 1 || !Number.isInteger(h.answer) || h.answer <= 0) { hardOK = false; break; }
+}
+ok('genInvestmentHard always valid (50 samples)', hardOK);
+
+// Dispatcher
+ok('genProblem("gambling","easy") returns gambling', genProblem('gambling', 'easy').mode === 'gambling');
+ok('genProblem("investment","easy") returns investment', genProblem('investment', 'easy').mode === 'investment');
+const mixedModes = new Set();
+for (let i = 0; i < 30; i++) mixedModes.add(genProblem('mixed', 'easy').mode);
+ok('genProblem("mixed",...) yields both modes over 30 samples', mixedModes.has('gambling') && mixedModes.has('investment'));
+
+// describe() shape
+const d = describe(genGamblingEasy());
+ok('describe() returns title + lines', typeof d.title === 'string' && Array.isArray(d.lines) && d.lines.length > 0);
+
+const summary = document.createElement('h2');
+summary.textContent = `${passed} passed, ${failed} failed`;
+summary.style.color = failed === 0 ? '#6f6' : '#f66';
+document.body.insertBefore(summary, out);
+
+// Also dump the easy problem pools so we can eyeball difficulty distribution
+const dump = document.createElement('pre');
+dump.textContent =
+  `Easy gambling pool (${easyG.length}):\n` +
+  easyG.map(p => `  p=${p.params.p} b=${p.params.b} → ${p.answer}%`).join('\n') +
+  `\n\nEasy investment pool (${easyI.length}):\n` +
+  easyI.map(p => `  p=${p.params.p} G=${p.params.g} L=${p.params.l} → ${p.answer}%`).join('\n');
+document.body.appendChild(dump);
+</script>
+</body>
+</html>
