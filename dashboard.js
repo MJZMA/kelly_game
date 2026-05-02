@@ -27,12 +27,17 @@ function showContent() {
   $('#dashContent').hidden = false;
 }
 
-async function gateCheck() {
+// Sentinel — same pattern as app.js. Callers from inside onAuthStateChange
+// must pass the user explicitly; calling getSession() from inside that
+// listener deadlocks supabase-js.
+const FETCH_USER = Symbol('fetch');
+
+async function gateCheck(userArg = FETCH_USER) {
   if (!isSupabaseConfigured) {
     showGate('Supabase is not configured. Edit config.js with your project URL, anon key, and owner email — see README.');
     return false;
   }
-  const user = await getUser();
+  const user = userArg === FETCH_USER ? await getUser() : userArg;
   if (!user) {
     showGate('Sign in to view your dashboard.', { signIn: true });
     $('#gateSignIn').onclick = () => signInWithGoogle().catch((e) => {
@@ -253,7 +258,7 @@ async function boot() {
 boot();
 
 // React to sign-in / sign-out without page reload (e.g., after OAuth redirect).
-onAuthChange(async () => {
-  const ok = await gateCheck();
+onAuthChange(async (user) => {
+  const ok = await gateCheck(user);
   if (ok) await refresh();
 });

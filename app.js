@@ -254,7 +254,13 @@ async function recordToDb(record) {
 
 // ---------------- Auth bar ----------------
 
-async function renderAuthBar() {
+// Sentinel: distinguishes "caller didn't supply a user, go fetch it" from
+// "caller passed null, meaning signed out". Needed because onAuthChange's
+// callback gives us the user directly — calling getSession() from inside
+// the auth-change listener deadlocks supabase-js's internal lock.
+const FETCH_USER = Symbol('fetch');
+
+async function renderAuthBar(userArg = FETCH_USER) {
   if (!isSupabaseConfigured) return; // bar stays hidden
   const bar = $('#authBar');
   const status = $('#authStatus');
@@ -262,7 +268,6 @@ async function renderAuthBar() {
   const dashLink = $('#dashLink');
   bar.hidden = false;
 
-  // Default to signed-out UI so the bar is never left visually empty.
   status.textContent = 'Loading…';
   btn.textContent = 'Sign in';
   btn.onclick = () => signInWithGoogle().catch((e) => {
@@ -272,7 +277,7 @@ async function renderAuthBar() {
   dashLink.hidden = true;
 
   try {
-    const user = await getUser();
+    const user = userArg === FETCH_USER ? await getUser() : userArg;
     if (!user) {
       status.textContent = '';
       return;
@@ -281,7 +286,7 @@ async function renderAuthBar() {
     const tag = owner ? 'Tracking' : 'Signed in (not tracked)';
     status.textContent = `${tag} · ${user.email}`;
     btn.textContent = 'Sign out';
-    btn.onclick = async () => { await signOut(); renderAuthBar(); };
+    btn.onclick = async () => { await signOut(); renderAuthBar(null); };
     dashLink.hidden = !owner;
   } catch (e) {
     console.warn('renderAuthBar failed:', e);
@@ -295,7 +300,7 @@ initSegments();
 renderDiffHint();
 renderHistory();
 renderAuthBar();
-onAuthChange(() => renderAuthBar());
+onAuthChange((user) => renderAuthBar(user));
 showScreen('settings');
 
 $('#startBtn').addEventListener('click', startGame);
