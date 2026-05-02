@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0e1117" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Kelly · Dashboard" />
+<title>Kelly · Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<main id="app" class="dashboard">
+
+  <a class="back-link" href="index.html">← Back to game</a>
+
+  <header class="brand">
+    <h1>Dashboard</h1>
+    <p class="tagline">Performance over time</p>
+  </header>
+
+  <!-- Locked state: no Supabase config / not signed in / not the owner -->
+  <section class="auth-gate" id="gate" hidden>
+    <p class="gate-msg" id="gateMsg"></p>
+    <button class="btn-primary" id="gateSignIn" hidden type="button">Sign in with Google</button>
+    <button class="btn-secondary wide" id="gateSignOut" hidden type="button">Sign out</button>
+  </section>
+
+  <!-- Owner content -->
+  <section id="dashContent" hidden>
+
+    <div class="setting">
+      <label>Time range</label>
+      <div class="seg" id="rangeSeg">
+        <button data-val="day" type="button">Day</button>
+        <button data-val="week" type="button">Week</button>
+        <button data-val="month" type="button">Month</button>
+        <button data-val="year" type="button">Year</button>
+        <button data-val="all" type="button">All</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <label>Mode</label>
+      <div class="seg" id="modeSeg">
+        <button data-val="all" type="button">All</button>
+        <button data-val="gambling" type="button">Gambling</button>
+        <button data-val="investment" type="button">Investment</button>
+        <button data-val="mixed" type="button">Mixed</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="chart-card">
+      <div class="chart-title">Score per session</div>
+      <div class="chart-wrap"><canvas id="scoreChart"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Accuracy per session</div>
+      <div class="chart-wrap"><canvas id="accuracyChart"></canvas></div>
+    </div>
+
+    <div class="recent">
+      <h2>Recent sessions</h2>
+      <ul id="recentList"></ul>
+      <p class="hint" id="recentEmpty" hidden>No sessions in this range yet.</p>
+    </div>
+  </section>
+</main>
+
+<!-- Chart.js + date-fns adapter as globals (avoids ESM peer-dep dedup issues). -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<script type="module" src="dashboard.js"></script>
+</body>
+</html>

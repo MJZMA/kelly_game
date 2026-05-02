@@ -45,13 +45,36 @@ On Android, Chrome will offer "Add to Home Screen" automatically; same effect.
 | File | Purpose |
 |---|---|
 | `index.html` | UI shell (settings / game / results, all in one DOM, toggled by class) |
-| `app.js` | Game loop, timer, state, localStorage, SW registration |
+| `app.js` | Game loop, timer, state, localStorage, SW registration, DB write |
 | `kelly.js` | Pure formula evaluators + problem generators (testable in isolation) |
 | `style.css` | Mobile-first dark theme, big numerals, large tap targets |
 | `kelly.test.html` | Browser-based sanity tests (open it, see pass/fail) |
 | `manifest.webmanifest` | PWA metadata |
 | `service-worker.js` | Cache-first offline support |
 | `icons/` | App icon (SVG + 180/192/512 PNG) |
+| `config.js` | Supabase URL, anon key, owner email (you fill in) |
+| `supabase.js` | Lazy CDN-loaded Supabase client |
+| `auth.js` | Sign-in / sign-out / owner check |
+| `dashboard.html` + `dashboard.js` | Owner-only performance charts (Chart.js from CDN) |
+| `supabase/schema.sql` | Postgres schema + row-level security policies |
+
+## Database backend (optional)
+
+Without configuration, the app works exactly as before — localStorage only. To enable cloud-recorded history and the dashboard:
+
+1. **Create a Supabase project** at https://supabase.com/dashboard (free tier).
+2. **Run the schema.** Open the SQL editor → New query → paste the contents of `supabase/schema.sql` → Run. This creates the `games` table and row-level security policies that isolate every user's data server-side.
+3. **Enable Google sign-in.** Authentication → Providers → Google → toggle on. (For prod, plug in your own Google OAuth client; the Supabase docs walk through it.)
+4. **Fill in `config.js`:**
+   - `SUPABASE_URL` and `SUPABASE_ANON_KEY` from Project Settings → API.
+   - `OWNER_EMAIL` set to the Google account email that should be tracked.
+5. **Reload the app**, click **Sign in** in the top bar, complete Google OAuth. The status flips to "Tracking on" and a **Dashboard →** link appears.
+
+The anon key is safe to commit to a public repo — RLS in Postgres is what protects your data, not key secrecy. Even if someone else signs in, they can only `SELECT` rows where `auth.uid() = user_id`, so they cannot see your games.
+
+**Who gets recorded?** Only the email matching `OWNER_EMAIL`. Other visitors can sign in but their games are not written to the DB; they fall back to localStorage like the unconfigured build. The dashboard page also gates on `OWNER_EMAIL`, so non-owners see "this dashboard is private."
+
+**Dashboard.** Open `dashboard.html` (or click the link from the settings screen). Time-range selector (Day / Week / Month / Year / All) and mode filter drive two line charts (score and accuracy per session) and a stats grid. Charts query the DB live with `played_at >= since`.
 
 ## Difficulty
 

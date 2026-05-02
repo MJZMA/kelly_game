@@ -1,12 +1,17 @@
 // Bump this whenever you ship new assets so old clients refetch.
-const CACHE = 'kelly-v2';
+const CACHE = 'kelly-v3';
 
 const ASSETS = [
   './',
   './index.html',
+  './dashboard.html',
   './style.css',
   './app.js',
   './kelly.js',
+  './auth.js',
+  './supabase.js',
+  './config.js',
+  './dashboard.js',
   './manifest.webmanifest',
   './icons/icon.svg',
 ];

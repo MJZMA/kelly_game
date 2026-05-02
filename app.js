@@ -1,4 +1,6 @@
 import { genProblem, describe, solve } from './kelly.js';
+import { getSupabase, isSupabaseConfigured } from './supabase.js';
+import { getUser, isOwner, signInWithGoogle, signOut, onAuthChange, OWNER_EMAIL } from './auth.js';
 
 // ---------------- State ----------------
 
@@ -205,6 +207,8 @@ function finishGame() {
   history.push(record);
   saveHistory(history);
 
+  recordToDb(record).catch((e) => console.warn('DB write failed:', e));
+
   $('#finalScore').textContent = String(state.score);
   const acc = state.attempts === 0 ? 0 : Math.round(100 * state.score / state.attempts);
   $('#finalAccuracy').textContent = `${acc}%`;
@@ -226,11 +230,60 @@ function quitGame() {
   renderHistory();
 }
 
+// ---------------- Database write ----------------
+// Only the configured owner gets DB writes. Other visitors play freely with
+// localStorage only — their submissions never touch the DB.
+
+async function recordToDb(record) {
+  if (!isSupabaseConfigured) return;
+  if (!(await isOwner())) return;
+  const sb = await getSupabase();
+  if (!sb) return;
+  const user = await getUser();
+  const { error } = await sb.from('games').insert({
+    user_id: user.id,
+    mode: state.settings.mode,
+    difficulty: state.settings.difficulty,
+    duration_sec: Number(state.settings.duration),
+    score: record.score,
+    attempts: record.attempts,
+    played_at: new Date(record.at).toISOString(),
+  });
+  if (error) throw error;
+}
+
+// ---------------- Auth bar ----------------
+
+async function renderAuthBar() {
+  if (!isSupabaseConfigured) return; // bar stays hidden
+  const bar = $('#authBar');
+  const status = $('#authStatus');
+  const btn = $('#authBtn');
+  const dashLink = $('#dashLink');
+  bar.hidden = false;
+
+  const user = await getUser();
+  if (!user) {
+    status.textContent = '';
+    btn.textContent = 'Sign in';
+    btn.onclick = () => signInWithGoogle().catch((e) => console.warn(e));
+    dashLink.hidden = true;
+    return;
+  }
+  const owner = user.email === OWNER_EMAIL;
+  status.textContent = owner ? 'Tracking on' : `Signed in (not tracked)`;
+  btn.textContent = 'Sign out';
+  btn.onclick = async () => { await signOut(); renderAuthBar(); };
+  dashLink.hidden = !owner;
+}
+
 // ---------------- Wire-up ----------------
 
 initSegments();
 renderDiffHint();
 renderHistory();
+renderAuthBar();
+onAuthChange(() => renderAuthBar());
 showScreen('settings');
 
 $('#startBtn').addEventListener('click', startGame);

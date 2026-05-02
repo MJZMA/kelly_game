@@ -19,6 +19,14 @@
 
   <!-- ============== SETTINGS SCREEN ============== -->
   <section class="screen" data-screen="settings">
+
+    <!-- Auth bar shown only on the settings screen -->
+    <div class="auth-bar" id="authBar" hidden>
+      <span class="auth-status" id="authStatus"></span>
+      <a href="dashboard.html" class="auth-link" id="dashLink" hidden>Dashboard →</a>
+      <button class="auth-btn" id="authBtn" type="button"></button>
+    </div>
+
     <header class="brand">
       <h1>Kelly</h1>
       <p class="tagline">Mental math drill</p>
