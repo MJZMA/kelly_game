@@ -256,14 +256,11 @@ function initSeg(id, key, onChange) {
 initSeg('rangeSeg', 'range', refresh);
 initSeg('modeSeg', 'mode', refresh);
 
-async function boot() {
-  const ok = await gateCheck();
-  if (ok) await refresh();
-}
-
-boot();
-
-// React to sign-in / sign-out without page reload (e.g., after OAuth redirect).
+// onAuthChange fires INITIAL_SESSION on registration (with current session, or
+// null if signed out) plus SIGNED_IN/OUT on transitions. So one listener covers
+// both the boot path and the post-redirect path — no separate boot() call,
+// which would race with this listener and deadlock on the auth lock when both
+// try to refresh() at the same time.
 onAuthChange(async (user) => {
   const ok = await gateCheck(user);
   if (ok) await refresh();
