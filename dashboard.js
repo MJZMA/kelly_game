@@ -35,7 +35,10 @@ async function gateCheck() {
   const user = await getUser();
   if (!user) {
     showGate('Sign in to view your dashboard.', { signIn: true });
-    $('#gateSignIn').onclick = () => signInWithGoogle().catch((e) => console.warn(e));
+    $('#gateSignIn').onclick = () => signInWithGoogle().catch((e) => {
+      console.warn(e);
+      $('#gateMsg').textContent = `Sign-in failed: ${e?.message || e}`;
+    });
     return false;
   }
   if (user.email !== OWNER_EMAIL) {

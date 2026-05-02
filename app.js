@@ -265,7 +265,10 @@ async function renderAuthBar() {
   // Default to signed-out UI so the bar is never left visually empty.
   status.textContent = 'Loading…';
   btn.textContent = 'Sign in';
-  btn.onclick = () => signInWithGoogle().catch((e) => console.warn(e));
+  btn.onclick = () => signInWithGoogle().catch((e) => {
+    console.warn(e);
+    status.textContent = `Sign-in failed: ${e?.message || e}`;
+  });
   dashLink.hidden = true;
 
   try {

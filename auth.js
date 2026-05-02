@@ -25,10 +25,15 @@ export async function isOwner() {
 export async function signInWithGoogle() {
   const sb = await getSupabase();
   if (!sb) throw new Error('Supabase not configured');
-  return sb.auth.signInWithOAuth({
+  // signInWithOAuth resolves with { data, error } — it does NOT throw on
+  // "provider not enabled" / "redirect URL not allowed". Surface those
+  // explicitly so a misconfigured Supabase project doesn't fail silently.
+  const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href },
   });
+  if (error) throw error;
+  return data;
 }
 
 export async function signOut() {
