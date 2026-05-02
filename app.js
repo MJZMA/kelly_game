@@ -278,7 +278,8 @@ async function renderAuthBar() {
       return;
     }
     const owner = user.email === OWNER_EMAIL;
-    status.textContent = owner ? 'Tracking on' : 'Signed in (not tracked)';
+    const tag = owner ? 'Tracking' : 'Signed in (not tracked)';
+    status.textContent = `${tag} · ${user.email}`;
     btn.textContent = 'Sign out';
     btn.onclick = async () => { await signOut(); renderAuthBar(); };
     dashLink.hidden = !owner;

@@ -18,7 +18,12 @@ export async function getSupabase() {
     _loadPromise = import('https://esm.sh/@supabase/supabase-js@2')
       .then(({ createClient }) => {
         _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+        });
+        // Diagnostic: log every auth event so we can see exactly what's happening
+        // during OAuth redirect / session restore.
+        _client.auth.onAuthStateChange((event, session) => {
+          console.log('[auth]', event, session?.user?.email ?? '(no session)');
         });
         return _client;
       })
