@@ -135,6 +135,40 @@ export function describe(problem) {
   };
 }
 
+// ---- Worked solution formatter ----
+
+const fmt = (x) => Number(x.toFixed(4)).toString();
+
+export function solve(problem) {
+  if (problem.mode === 'gambling') {
+    const { p, b } = problem.params;
+    const q = 1 - p;
+    const qOverB = q / b;
+    const f = p - qOverB;
+    return [
+      `f* = p − (1−p)/b`,
+      `   = ${fmt(p)} − (1 − ${fmt(p)})/${fmt(b)}`,
+      `   = ${fmt(p)} − ${fmt(q)}/${fmt(b)}`,
+      `   = ${fmt(p)} − ${fmt(qOverB)}`,
+      `   = ${fmt(f)}`,
+      `   = ${Math.round(f * 100)}%`,
+    ];
+  }
+  const { p, g, l } = problem.params;
+  const q = 1 - p;
+  const pOverL = p / l;
+  const qOverG = q / g;
+  const f = pOverL - qOverG;
+  return [
+    `f* = p/L − (1−p)/G`,
+    `   = ${fmt(p)}/${fmt(l)} − (1 − ${fmt(p)})/${fmt(g)}`,
+    `   = ${fmt(p)}/${fmt(l)} − ${fmt(q)}/${fmt(g)}`,
+    `   = ${fmt(pOverL)} − ${fmt(qOverG)}`,
+    `   = ${fmt(f)}`,
+    `   = ${Math.round(f * 100)}%`,
+  ];
+}
+
 // Exposed for the test page.
 export const _internal = {
   EASY_GAMBLING_PROBLEMS,

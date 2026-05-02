@@ -1,5 +1,5 @@
 // Bump this whenever you ship new assets so old clients refetch.
-const CACHE = 'kelly-v1';
+const CACHE = 'kelly-v2';
 
 const ASSETS = [
   './',

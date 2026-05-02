@@ -251,6 +251,21 @@ body {
   margin-top: 0.5rem;
 }
 
+.solution {
+  text-align: left;
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--fg);
+  white-space: pre;
+  overflow-x: auto;
+}
+
 .game-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

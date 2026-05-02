@@ -1,4 +1,4 @@
-import { genProblem, describe } from './kelly.js';
+import { genProblem, describe, solve } from './kelly.js';
 
 // ---------------- State ----------------
 
@@ -14,6 +14,7 @@ const state = {
   attempts: 0,
   timerId: null,
   endsAt: 0,
+  solutionShown: false,
 };
 
 function loadSettings() {
@@ -134,6 +135,11 @@ function tick() {
 }
 
 function nextProblem() {
+  state.solutionShown = false;
+  $('#solution').hidden = true;
+  $('#solution').textContent = '';
+  $('#solutionsBtn').textContent = 'Solutions';
+
   const p = genProblem(state.settings.mode, state.settings.difficulty);
   state.current = p;
   const d = describe(p);
@@ -143,6 +149,7 @@ function nextProblem() {
 }
 
 function checkAnswer() {
+  if (state.solutionShown) return; // typing ignored after peek
   const raw = $('#answer').value.trim();
   if (raw === '') return;
   const n = Number(raw);
@@ -158,12 +165,23 @@ function checkAnswer() {
   // wrong-but-still-typing: do nothing; user keeps typing.
 }
 
-function skipProblem() {
-  state.attempts++;
+function showSolution() {
+  if (state.solutionShown || !state.current) return;
+  state.solutionShown = true;
+  state.attempts++; // counted as an attempt with no correct answer
   flash('bad');
-  $('#feedback').textContent = `Was ${state.current.answer}%`;
-  setTimeout(() => { $('#feedback').textContent = ''; }, 900);
-  nextProblem();
+  $('#solution').textContent = solve(state.current).join('\n');
+  $('#solution').hidden = false;
+  $('#solutionsBtn').textContent = 'Next';
+}
+
+function onSolutionsBtn() {
+  if (state.solutionShown) {
+    nextProblem();
+    $('#answer').focus();
+  } else {
+    showSolution();
+  }
 }
 
 function flash(kind) {
@@ -216,7 +234,7 @@ renderHistory();
 showScreen('settings');
 
 $('#startBtn').addEventListener('click', startGame);
-$('#skipBtn').addEventListener('click', () => { skipProblem(); $('#answer').focus(); });
+$('#solutionsBtn').addEventListener('click', onSolutionsBtn);
 $('#quitBtn').addEventListener('click', quitGame);
 $('#playAgainBtn').addEventListener('click', startGame);
 $('#backToSettingsBtn').addEventListener('click', () => { showScreen('settings'); renderHistory(); });
