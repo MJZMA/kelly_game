@@ -34,11 +34,13 @@ const FETCH_USER = Symbol('fetch');
 
 async function gateCheck(userArg = FETCH_USER) {
   if (!isSupabaseConfigured) {
+    console.log('[dash] gate: supabase not configured');
     showGate('Supabase is not configured. Edit config.js with your project URL, anon key, and owner email — see README.');
     return false;
   }
   const user = userArg === FETCH_USER ? await getUser() : userArg;
   if (!user) {
+    console.log('[dash] gate: no user');
     showGate('Sign in to view your dashboard.', { signIn: true });
     $('#gateSignIn').onclick = () => signInWithGoogle().catch((e) => {
       console.warn(e);
@@ -47,10 +49,12 @@ async function gateCheck(userArg = FETCH_USER) {
     return false;
   }
   if (user.email !== OWNER_EMAIL) {
+    console.log(`[dash] gate: ${user.email} != ${OWNER_EMAIL}`);
     showGate(`This dashboard is private. You are signed in as ${user.email}.`, { signOut: true });
     $('#gateSignOut').onclick = async () => { await signOut(); gateCheck(); };
     return false;
   }
+  console.log('[dash] gate: pass for', user.email);
   showContent();
   return true;
 }
@@ -70,16 +74,18 @@ function rangeSinceIso(range) {
 
 async function loadRows() {
   const sb = await getSupabase();
-  if (!sb) return [];
+  if (!sb) { console.log('[dash] no supabase client'); return []; }
   let q = sb.from('games').select('*').order('played_at', { ascending: true });
   const since = rangeSinceIso(state.range);
   if (since) q = q.gte('played_at', since);
   if (state.mode !== 'all') q = q.eq('mode', state.mode);
+  console.log('[dash] querying games range=', state.range, 'mode=', state.mode, 'since=', since);
   const { data, error } = await q;
   if (error) {
-    console.warn('Failed to load games:', error.message);
+    console.error('[dash] query failed:', error);
     return [];
   }
+  console.log('[dash] query returned', data?.length ?? 0, 'rows', data);
   return data || [];
 }
 
