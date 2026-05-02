@@ -6,8 +6,15 @@ export { isSupabaseConfigured, OWNER_EMAIL };
 export async function getUser() {
   const sb = await getSupabase();
   if (!sb) return null;
-  const { data } = await sb.auth.getUser();
-  return data?.user ?? null;
+  // getSession() reads from localStorage only — no network call, no exceptions
+  // on flaky connections. The session object already contains the user.
+  try {
+    const { data } = await sb.auth.getSession();
+    return data?.session?.user ?? null;
+  } catch (e) {
+    console.warn('getUser failed:', e);
+    return null;
+  }
 }
 
 export async function isOwner() {

@@ -262,19 +262,27 @@ async function renderAuthBar() {
   const dashLink = $('#dashLink');
   bar.hidden = false;
 
-  const user = await getUser();
-  if (!user) {
+  // Default to signed-out UI so the bar is never left visually empty.
+  status.textContent = 'Loading…';
+  btn.textContent = 'Sign in';
+  btn.onclick = () => signInWithGoogle().catch((e) => console.warn(e));
+  dashLink.hidden = true;
+
+  try {
+    const user = await getUser();
+    if (!user) {
+      status.textContent = '';
+      return;
+    }
+    const owner = user.email === OWNER_EMAIL;
+    status.textContent = owner ? 'Tracking on' : 'Signed in (not tracked)';
+    btn.textContent = 'Sign out';
+    btn.onclick = async () => { await signOut(); renderAuthBar(); };
+    dashLink.hidden = !owner;
+  } catch (e) {
+    console.warn('renderAuthBar failed:', e);
     status.textContent = '';
-    btn.textContent = 'Sign in';
-    btn.onclick = () => signInWithGoogle().catch((e) => console.warn(e));
-    dashLink.hidden = true;
-    return;
   }
-  const owner = user.email === OWNER_EMAIL;
-  status.textContent = owner ? 'Tracking on' : `Signed in (not tracked)`;
-  btn.textContent = 'Sign out';
-  btn.onclick = async () => { await signOut(); renderAuthBar(); };
-  dashLink.hidden = !owner;
 }
 
 // ---------------- Wire-up ----------------

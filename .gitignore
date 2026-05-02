@@ -1,0 +1,10 @@
+# Local Supabase config — values are safe to share (publishable key + email),
+# but kept out of the repo so forks/clones don't accidentally hit your project.
+# Copy config.example.js → config.js and fill in your own values.
+config.js
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
