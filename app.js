@@ -207,7 +207,11 @@ function finishGame() {
   history.push(record);
   saveHistory(history);
 
-  recordToDb(record).catch((e) => console.warn('DB write failed:', e));
+  recordToDb(record).catch((e) => {
+    console.error('[db] write failed:', e);
+    const status = $('#authStatus');
+    if (status) status.textContent = `DB write failed: ${e?.message || e}`;
+  });
 
   $('#finalScore').textContent = String(state.score);
   const acc = state.attempts === 0 ? 0 : Math.round(100 * state.score / state.attempts);
@@ -235,11 +239,13 @@ function quitGame() {
 // localStorage only — their submissions never touch the DB.
 
 async function recordToDb(record) {
-  if (!isSupabaseConfigured) return;
-  if (!(await isOwner())) return;
+  if (!isSupabaseConfigured) { console.log('[db] skip: supabase not configured'); return; }
   const sb = await getSupabase();
-  if (!sb) return;
+  if (!sb) { console.log('[db] skip: supabase client unavailable'); return; }
   const user = await getUser();
+  if (!user) { console.log('[db] skip: no signed-in user'); return; }
+  if (user.email !== OWNER_EMAIL) { console.log(`[db] skip: ${user.email} != owner ${OWNER_EMAIL}`); return; }
+  console.log('[db] inserting game for', user.email);
   const { error } = await sb.from('games').insert({
     user_id: user.id,
     mode: state.settings.mode,
@@ -250,6 +256,7 @@ async function recordToDb(record) {
     played_at: new Date(record.at).toISOString(),
   });
   if (error) throw error;
+  console.log('[db] insert OK');
 }
 
 // ---------------- Auth bar ----------------
